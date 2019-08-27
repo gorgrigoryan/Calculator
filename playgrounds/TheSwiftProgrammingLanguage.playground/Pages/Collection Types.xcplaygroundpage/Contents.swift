@@ -1,35 +1,4 @@
-//: [↑ Contents](Contents) \
-//: [← Previous](@previous)
-//:
-//: # Collection Types
-//: Swift provides three primary _collection types_:
-//: * **Arrays** are ordered collections of values.
-//: * **Sets** are unordered collections of unique values.
-//: * **Dictionaries** are unordered collections of key-value associations.
-//:
-//: Arrays, sets, and dictionaries in Swift are always clear about the types of values and keys that they can store.
-//:
-//: - - -
-//: ✏️ Swift’s array, set, and dictionary types are implemented as _generic collections_.
-//: - - -
-//: ## Mutability of Collections
-//: Collections are _mutable_ when declared with `var` and _immutable_ when declared with `let`.
-//: - - -
-//: ✏️ Always create immutable collections if you're not going to change them later.
-//: - - -
-//: ## Arrays
-//: An _array_ stores values of the same type in an ordered list.
-//: The same value can appear in an array multiple times at different positions.
-//: - - -
-//: ✏️ Swift’s `Array` type is bridged to Foundation’s `NSArray` class.
-//: - - -
-//: ### Array Type Shorthand Syntax
-//: The type of a Swift array is written in full as `Array<Element>`, where `Element` is the type of values the array is allowed to store. You can also write the type of an array in shorthand form as `[Element]`.
-//:
-//: The shorthand form is preferred.
-//: ### Creating an Empty Array
-//: Initializer syntax:
-    var someInts = [Int]()
+     var someInts = [Int]()
 
     print("someInts is of type [Int] with \(someInts.count) items.")
 //: If the context already provides type information, such as a function argument or an already typed variable or constant, you can create an empty array with an empty array literal, which is written as `[]`:

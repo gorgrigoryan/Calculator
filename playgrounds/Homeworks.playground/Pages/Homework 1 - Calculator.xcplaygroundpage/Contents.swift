@@ -3,98 +3,103 @@ import UIKit
 
 public class Controller: NSObject, CalculatorViewDelegate, CalculatorViewDataSource {
     typealias Operation = (Double, Double) -> Double
+    
+    enum ArithmeticOperation: Character {
+        case addition = "+"
+        case subtraction = "-"
+        case multiplication = "*"
+        case division = "/"
+        
+        var operation: Operation {
+            switch self {
+            case .addition: return { $0 + $1 }
+            case .subtraction: return { $0 - $1 }
+            case .multiplication: return { $0 * $1 }
+            case .division: return { $0 / $1 }
+            }
+        }
+    }
+    
     var displayText = "0"
-    var operation: Character = " "
-    var lhsStringValue: String = ""
-    var rhsStringValue: String = ""
-    var haveDotInDisplayText: Bool = false
+    var arithmeticOperation: ArithmeticOperation?
+    var firstValue = "" {
+        didSet {
+            displayText = firstValue.isEmpty ? "0" : firstValue
+        }
+    }
+    var secondValue = "" {
+        didSet {
+            displayText = secondValue.isEmpty ? "0" : secondValue
+        }
+    }
+    var hasDot = false
     
     public func calculatorView(_ calculatorView: CalculatorView, didPress key: CalculatorKey) {
         switch key {
         case .number:
-            if operation == " " {
-                if lhsStringValue.isEmpty {
-                    lhsStringValue += key.rawValue
-                    displayText = lhsStringValue
-                    haveDotInDisplayText = false
-                    break
-                }
-                lhsStringValue += key.rawValue
-                displayText = lhsStringValue
-            } else {
-                if rhsStringValue.isEmpty {
-                    rhsStringValue += key.rawValue
-                    displayText = rhsStringValue
-                    haveDotInDisplayText = false
-                    break
-                }
-                rhsStringValue += key.rawValue
-                displayText = rhsStringValue
-            }
+            arithmeticOperation == nil ?
+                update(value: &firstValue, with: key) :
+                update(value: &secondValue, with: key)
         case .clear:
-            displayText = "0"
-            operation = " "
-            haveDotInDisplayText = false
-            lhsStringValue = ""
-            rhsStringValue = ""
+            arithmeticOperation = nil
+            hasDot = false
+            firstValue = ""
+            secondValue = ""
         case .toggleSign:
             if displayText == "0" {
                 break
             }
             let displayTemp = displayText
             
-            if displayTemp[displayTemp.startIndex] == "-" {
+            if let firstChar = displayTemp.first,
+                firstChar == "-" {
                 displayText.removeFirst()
-            }
-            else {
+            } else {
                 displayText = "-" + displayTemp
             }
             
-            operation == " " ? (lhsStringValue = displayText) : (rhsStringValue = displayText)
+            arithmeticOperation == nil ? (firstValue = displayText) : (secondValue = displayText)
         case .percent:
-            let lhsDoubleValue = Double(lhsStringValue)!
-            if operation == " " {
+            let lhsDoubleValue = Double(firstValue)!
+            if arithmeticOperation == nil {
                 let result = lhsDoubleValue / 100
-                lhsStringValue = String(result)
-            }
-            else if rhsStringValue.isEmpty {
+                firstValue = String(result)
+            } else if secondValue.isEmpty {
                 let result = lhsDoubleValue * lhsDoubleValue / 100
-                lhsStringValue = String(result)
-            }
-            else {
-                let rhsDoubleValue = Double(rhsStringValue)!
+                firstValue = String(result)
+            } else {
+                let rhsDoubleValue = Double(secondValue)!
                 let result = lhsDoubleValue * rhsDoubleValue / 100
-                lhsStringValue = String(result)
+                firstValue = String(result)
             }
-            displayText = lhsStringValue
-            rhsStringValue = ""
-            operation = " "
+            displayText = firstValue
+            secondValue = ""
+            arithmeticOperation = nil
         case .add:
-            operation = "+"
-            haveDotInDisplayText == false
+            arithmeticOperation = .addition
+            hasDot == false
         case .subtract:
-            operation = "-"
-            haveDotInDisplayText == false
+            arithmeticOperation = .subtraction
+            hasDot == false
         case .multiply:
-            operation = "*"
-            haveDotInDisplayText == false
+            arithmeticOperation = .multiplication
+            hasDot == false
         case .divide:
-            operation = "/"
-            haveDotInDisplayText == false
+            arithmeticOperation = .division
+            hasDot == false
         case .dot:
-            if haveDotInDisplayText == false {
-                haveDotInDisplayText = true
-                if operation != " " {
-                    if rhsStringValue.isEmpty {
+            if hasDot == false {
+                hasDot = true
+                if arithmeticOperation != nil {
+                    if secondValue.isEmpty {
                         displayText = "0"
-                        rhsStringValue += "0"
+                        secondValue += "0"
                     } else {
-                        rhsStringValue += "."
+                        secondValue += "."
                     }
                 } else {
-                    lhsStringValue += "."
+                    firstValue += "."
                 }
-                displayText += "."
             }
         case .equal:
             computeResultOfExpression()
@@ -105,58 +110,41 @@ public class Controller: NSObject, CalculatorViewDelegate, CalculatorViewDataSou
         }
     }
     
-    private func computeResultOfExpression() {
-        switch operation {
-        case "+":
-            if rhsStringValue == "" {
-                computeResult(op1: lhsStringValue, op2: lhsStringValue, operation: +)
-            } else {
-                computeResult(op1: lhsStringValue, op2: rhsStringValue, operation: +)
-                
-            }
-        case "-":
-            if rhsStringValue == "" {
-                computeResult(op1: lhsStringValue, op2: lhsStringValue, operation: -)
-            } else {
-                computeResult(op1: lhsStringValue, op2: rhsStringValue, operation: -)
-            }
-        case "*":
-            if rhsStringValue == "" {
-                computeResult(op1: lhsStringValue, op2: lhsStringValue, operation: *)
-            } else {
-                computeResult(op1: lhsStringValue, op2: rhsStringValue, operation: *)
-            }
-        case "/":
-            if rhsStringValue == "" {
-                computeResult(op1: lhsStringValue, op2: lhsStringValue, operation: /)
-            } else {
-                computeResult(op1: lhsStringValue, op2: rhsStringValue, operation: /)
-            }
-        default:
-            break
+    private func update(value: inout String, with key: CalculatorKey) {
+        if value.isEmpty {
+            hasDot = false
         }
-        rhsStringValue = ""
-        displayText = lhsStringValue
-        operation = " "
+        value += key.rawValue
     }
     
+    private func computeResultOfExpression() {
+        guard let arithmeticOperation = arithmeticOperation else {
+            preconditionFailure("No oeration specified!")
+        }
+        let operationFunction = arithmeticOperation.operation
+        let op1 = firstValue
+        let op2 = secondValue == "" ? firstValue : secondValue
+        computeResult(op1: op1, op2: op2, operation: operationFunction)
+        secondValue = ""
+        displayText = firstValue
+        self.arithmeticOperation = nil
+    }
+
+    
     private func computeResult(op1: String, op2: String, operation: Operation) {
-        let op1DoubleValue = Double(op1)!
-        let op2DoubleValue = Double(op2)!
-        var result = operation(op1DoubleValue, op2DoubleValue)
+        guard let lhs = Double(op1), let rhs = Double(op2) else {
+            preconditionFailure("Invalid operand conversion from string.")
+        }
+        var result = operation(lhs, rhs)
         roundResult(&result)
-        lhsStringValue = String(result)
+        firstValue = String(result)
         removeLastTwoSymbols()
     }
     
     private func removeLastTwoSymbols() {
-        let index = lhsStringValue.index(before: lhsStringValue.endIndex)
-        let indexbeforeLast = lhsStringValue.index(before: index)
-        if lhsStringValue[index] == "0"
-        && lhsStringValue[indexbeforeLast] == "." {
-            lhsStringValue.removeLast()
-            lhsStringValue.removeLast()
-            haveDotInDisplayText = false
+        if firstValue.hasSuffix(".0") {
+            firstValue = String(firstValue.dropLast(2))
+            hasDot = false
         }
     }
     
