@@ -51,8 +51,7 @@ public class Controller: NSObject, CalculatorViewDelegate, CalculatorViewDataSou
             }
             let displayTemp = displayText
             
-            if let firstChar = displayTemp.first,
-                firstChar == "-" {
+            if let firstChar = displayTemp.first, firstChar == "-" {
                 displayText.removeFirst()
             } else {
                 displayText = "-" + displayTemp
@@ -61,53 +60,50 @@ public class Controller: NSObject, CalculatorViewDelegate, CalculatorViewDataSou
             arithmeticOperation == nil ? (firstValue = displayText) : (secondValue = displayText)
         case .percent:
             let lhsDoubleValue = Double(firstValue)!
-            if arithmeticOperation == nil {
-                let result = lhsDoubleValue / 100
-                firstValue = String(result)
-            } else if secondValue.isEmpty {
-                let result = lhsDoubleValue * lhsDoubleValue / 100
-                firstValue = String(result)
-            } else {
-                let rhsDoubleValue = Double(secondValue)!
-                let result = lhsDoubleValue * rhsDoubleValue / 100
-                firstValue = String(result)
+            var result = lhsDoubleValue / 100
+            
+            if arithmeticOperation != nil {
+                if secondValue.isEmpty {
+                    result *= lhsDoubleValue
+                } else {
+                    let rhsDoubleValue = Double(secondValue)!
+                    result *= rhsDoubleValue
+                }
             }
-            displayText = firstValue
             secondValue = ""
+            roundResult(&result)
+            firstValue = String(result)
             arithmeticOperation = nil
         case .add:
             arithmeticOperation = .addition
-            hasDot == false
+            hasDot = false
         case .subtract:
             arithmeticOperation = .subtraction
-            hasDot == false
+            hasDot = false
         case .multiply:
             arithmeticOperation = .multiplication
-            hasDot == false
+            hasDot = false
         case .divide:
             arithmeticOperation = .division
-            hasDot == false
+            hasDot = false
         case .dot:
-            if hasDot == false {
+            if !hasDot {
                 hasDot = true
-                if arithmeticOperation != nil {
-                    if secondValue.isEmpty {
-                        displayText = "0"
-                        secondValue += "0"
-                    } else {
-                        secondValue += "."
-                    }
-                } else {
-                    firstValue += "."
-                }
+                arithmeticOperation != nil ? setDotOn(value: &secondValue) : setDotOn(value: &firstValue)
             }
         case .equal:
             computeResultOfExpression()
             
         case .undefined:
             displayText = "0"
-
         }
+    }
+    
+    private func setDotOn(value: inout String) {
+        if value.isEmpty {
+            value += "0"
+        }
+        value += "."
     }
     
     private func update(value: inout String, with key: CalculatorKey) {
@@ -119,11 +115,11 @@ public class Controller: NSObject, CalculatorViewDelegate, CalculatorViewDataSou
     
     private func computeResultOfExpression() {
         guard let arithmeticOperation = arithmeticOperation else {
-            preconditionFailure("No oeration specified!")
+            preconditionFailure("No operation specified!")
         }
         let operationFunction = arithmeticOperation.operation
         let op1 = firstValue
-        let op2 = secondValue == "" ? firstValue : secondValue
+        let op2 = secondValue.isEmpty ? firstValue : secondValue
         computeResult(op1: op1, op2: op2, operation: operationFunction)
         secondValue = ""
         displayText = firstValue
@@ -158,7 +154,8 @@ public class Controller: NSObject, CalculatorViewDelegate, CalculatorViewDataSou
 }
 
 // Internal Setup
-let controller = Controller(), page = PlaygroundPage.current
+let controller = Controller(), page =
+    PlaygroundPage.current
 setupCalculatorView(for: page, with: controller)
 // To see the calculator view:
 // 1. Run the Playground (⌘Cmd + ⇧Shift + ↩Return)
